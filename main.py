@@ -80,6 +80,12 @@ class Player(pygame.sprite.Sprite):
             pygame.sprite.spritecollideany(self, obbstacle_group).change_coords()
             self.live -= 1
 
+    def new_game(self):
+        self.score = 0
+        self.live = 3
+        self.image = player_image
+        self.rect.x, self.rect.y = self.begin_pos
+
 
 class Coin(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, is_super=False):
@@ -100,6 +106,9 @@ class Coin(pygame.sprite.Sprite):
     def change_coords(self):
         self.rect.x, self.rect.y = random.randint(750, 4000), random.randint(0, 400)
 
+    def new_game(self):
+        self.change_coords()
+
 
 class Obstacle(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, is_dementor=False):
@@ -119,24 +128,48 @@ class Obstacle(pygame.sprite.Sprite):
 
     def change_coords(self):
         if self.is_dementor:
-            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(0, 300)
+            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(0, 270)
         else:
             self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(390, 400)
 
+    def new_game(self):
+        self.change_coords()
+
+
+class Border(pygame.sprite.Sprite):
+    def __init__(self, x1, y1, x2, y2):
+        super().__init__(all_sprites)
+        if x1 == x2:
+            self.add(vertical_borders)
+            self.image = pygame.Surface([1, y2 - y1])
+            self.rect = pygame.Rect(x1, y1, 1, y2 - y1)
+        else:
+            self.add(horizontal_borders)
+            self.image = pygame.Surface([x2 - x1, 1])
+            self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
 
 
 all_sprites = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
 obbstacle_group = pygame.sprite.Group()
+vertical_borders = pygame.sprite.Group()
+horizontal_borders = pygame.sprite.Group()
 
 
 def generate():
+    Border(0, 0, WIDTH, 0)
+    Border(0, 0, 0, HEIGHT)
+    Border(0, HEIGHT, WIDTH, HEIGHT)
+    Border(WIDTH, HEIGHT, WIDTH, 0)
+    others = []
     for i in range(2):
-        Coin(random.randint(750, 4000), random.randint(0, 400))
-    Coin(random.randint(750, 4000), random.randint(0, 400), True)
-    Obstacle(random.randint(750, 4000), random.randint(380, 400))
-    Obstacle(random.randint(750, 4000), random.randint(0, 300), True)
+        others.append(Coin(random.randint(750, 4000), random.randint(0, 400)))
+    others.append(Coin(random.randint(750, 4000), random.randint(0, 400), True))
+    others.append(Obstacle(random.randint(750, 4000), random.randint(380, 400)))
+    others.append(Obstacle(random.randint(750, 4000), random.randint(0, 300), True))
+    player = Player()
+    return player, others
 
 
 def show_score(player):
@@ -147,7 +180,7 @@ def show_score(player):
     screen.blit(string_rendered, rect)
 
 
-def show_life(player):
+def show_live(player):
     image = live_image
     for i in range(player.live):
         rect = image.get_rect().move(600 + i * 30, 10)
@@ -161,7 +194,7 @@ def terminate():
 
 def start_screen():
     intro_text = ["HARRY POTTER", ""
-                                  "PRESS ENTER TO START"]
+                                  "PRESS SPASE TO START"]
 
     fon = pygame.transform.scale(load_image('fon.png'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
@@ -184,7 +217,32 @@ def start_screen():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN or \
+            elif event.type == pygame.KEYDOWN:
+                if pygame.key.get_pressed()[pygame.K_SPACE]:
+                    return  # начинаем игру
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def finish_screen(player):
+    intro_text = ["You Lost!",
+                  f"Your score is {player.score}"]
+    screen.fill(pygame.Color('dark blue'))
+    font = pygame.font.Font(None, 50)
+    text_coord = 30
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('light blue'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 100
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN  or \
                     event.type == pygame.MOUSEBUTTONDOWN:
                 return  # начинаем игру
         pygame.display.flip()
@@ -192,6 +250,7 @@ def start_screen():
 
 
 def drawing_fon():
+    screen.fill(pygame.Color('dark blue'))
     pygame.draw.rect(screen, pygame.Color('dark green'), (0, 400, 700, 100))
     for i in range(1000):
         pygame.draw.circle(screen, pygame.Color('white'),
@@ -200,19 +259,23 @@ def drawing_fon():
 
 if __name__ == '__main__':
     pygame.display.set_caption('Гарри Поттер')
-    start_screen()
-    generate()
-    player = Player()
+    player, others = generate()
     while True:
-        screen.fill(pygame.Color('dark blue'))
-        drawing_fon()
-        show_score(player)
-        show_life(player)
-        all_sprites.draw(screen)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            player_group.update(event)
-        all_sprites.update()
-        clock.tick(FPS)
-        pygame.display.flip()
+        start_screen()
+        player.new_game()
+        for el in others:
+            el.new_game()
+        while player.live:
+            drawing_fon()
+            show_score(player)
+            show_live(player)
+            all_sprites.draw(screen)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                player_group.update(event)
+            all_sprites.update()
+            clock.tick(FPS)
+            pygame.display.flip()
+        finish_screen(player)
+
