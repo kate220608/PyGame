@@ -2,6 +2,7 @@ import pygame
 import os
 import sys
 import random
+from work_with_base import add_score_to_bd, find_best_score
 
 pygame.init()
 size = WIDTH, HEIGHT = 700, 500
@@ -158,10 +159,6 @@ horizontal_borders = pygame.sprite.Group()
 
 
 def generate():
-    Border(0, 0, WIDTH, 0)
-    Border(0, 0, 0, HEIGHT)
-    Border(0, HEIGHT, WIDTH, HEIGHT)
-    Border(WIDTH, HEIGHT, WIDTH, 0)
     others = []
     for i in range(2):
         others.append(Coin(random.randint(750, 4000), random.randint(0, 400)))
@@ -226,7 +223,8 @@ def start_screen():
 
 def finish_screen(player):
     intro_text = ["You Lost!",
-                  f"Your score is {player.score}"]
+                  f"Your score is {player.score}",
+                  f"Best score: {find_best_score()}"]
     screen.fill(pygame.Color('dark blue'))
     font = pygame.font.Font(None, 50)
     text_coord = 30
@@ -247,6 +245,7 @@ def finish_screen(player):
                 return  # начинаем игру
         pygame.display.flip()
         clock.tick(FPS)
+
 
 
 def drawing_fon():
@@ -277,5 +276,6 @@ if __name__ == '__main__':
             all_sprites.update()
             clock.tick(FPS)
             pygame.display.flip()
+        add_score_to_bd(player.score)
         finish_screen(player)
 
