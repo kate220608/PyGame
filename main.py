@@ -11,6 +11,7 @@ clock = pygame.time.Clock()
 FPS = 50
 
 
+
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -37,6 +38,7 @@ dementor_obstacle_image = pygame.transform.scale(load_image('dementor.png'), (80
 live_image = pygame.transform.scale(load_image('owl.png'), (26, 30))
 
 
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(player_group, all_sprites)
@@ -52,6 +54,8 @@ class Player(pygame.sprite.Sprite):
         if self.image == fly_player_image:
             self.rect = self.rect.move(0, self.flying_vy / FPS)
             self.time_in_flight -= 1
+            if pygame.sprite.spritecollideany(self, horizontal_borders):
+                self.flying_vy = -self.flying_vy
             if self.time_in_flight <= 0:
                 self.image = player_image
                 self.rect.x, self.rect.y = self.begin_pos
@@ -129,7 +133,7 @@ class Obstacle(pygame.sprite.Sprite):
 
     def change_coords(self):
         if self.is_dementor:
-            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(0, 270)
+            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(0, 250)
         else:
             self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(390, 400)
 
@@ -140,31 +144,27 @@ class Obstacle(pygame.sprite.Sprite):
 class Border(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2):
         super().__init__(all_sprites)
-        if x1 == x2:
-            self.add(vertical_borders)
-            self.image = pygame.Surface([1, y2 - y1])
-            self.rect = pygame.Rect(x1, y1, 1, y2 - y1)
-        else:
-            self.add(horizontal_borders)
-            self.image = pygame.Surface([x2 - x1, 1])
-            self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
+        self.add(horizontal_borders)
+        self.image = pygame.Surface([x2 - x1, 1])
+        self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
 
 
 all_sprites = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
 obbstacle_group = pygame.sprite.Group()
-vertical_borders = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
 
 
 def generate():
+    Border(0, HEIGHT, WIDTH, HEIGHT)
+    Border(0, 0, WIDTH, 0)
     others = []
     for i in range(2):
         others.append(Coin(random.randint(750, 4000), random.randint(0, 400)))
     others.append(Coin(random.randint(750, 4000), random.randint(0, 400), True))
     others.append(Obstacle(random.randint(750, 4000), random.randint(380, 400)))
-    others.append(Obstacle(random.randint(750, 4000), random.randint(0, 300), True))
+    others.append(Obstacle(random.randint(750, 4000), random.randint(0, 250), True))
     player = Player()
     return player, others
 
@@ -190,6 +190,8 @@ def terminate():
 
 
 def start_screen():
+    pygame.mixer.music.load("data/menu_music.mp3")
+    pygame.mixer.music.play(-1)
     intro_text = ["HARRY POTTER", ""
                                   "PRESS SPASE TO START"]
 
@@ -222,6 +224,8 @@ def start_screen():
 
 
 def finish_screen(player):
+    pygame.mixer.music.load("data/menu_music.mp3")
+    pygame.mixer.music.play(-1)
     intro_text = ["You Lost!",
                   f"Your score is {player.score}",
                   f"Best score: {find_best_score()}"]
@@ -240,12 +244,11 @@ def finish_screen(player):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.KEYDOWN  or \
-                    event.type == pygame.MOUSEBUTTONDOWN:
-                return  # начинаем игру
+            elif event.type == pygame.KEYDOWN:
+                if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+                    return  # начинаем игру
         pygame.display.flip()
         clock.tick(FPS)
-
 
 
 def drawing_fon():
@@ -264,6 +267,8 @@ if __name__ == '__main__':
         player.new_game()
         for el in others:
             el.new_game()
+        pygame.mixer.music.load("data/game_music.mp3")
+        pygame.mixer.music.play(-1)
         while player.live:
             drawing_fon()
             show_score(player)
@@ -272,6 +277,9 @@ if __name__ == '__main__':
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
+                if event.type == pygame.KEYDOWN:
+                    if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+                        player.live = 0
                 player_group.update(event)
             all_sprites.update()
             clock.tick(FPS)
