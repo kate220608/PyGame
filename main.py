@@ -279,6 +279,8 @@ def rules_screen():
             elif event.type == pygame.KEYDOWN:
                 if pygame.key.get_pressed()[pygame.K_SPACE]:
                     return
+                if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+                    return True
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -296,7 +298,8 @@ if __name__ == '__main__':
     player, others = generate()
     while True:
         if start_screen():
-            rules_screen()
+            if rules_screen():
+                continue
         player.new_game()
         for el in others:
             el.new_game()
