@@ -219,6 +219,8 @@ def start_screen():
             elif event.type == pygame.KEYDOWN:
                 if pygame.key.get_pressed()[pygame.K_SPACE]:
                     return  # начинаем игру
+                if pygame.key.get_pressed()[pygame.K_RETURN]:
+                    return True
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -231,13 +233,13 @@ def finish_screen(player):
                   f"Best score: {find_best_score()}"]
     screen.fill(pygame.Color('dark blue'))
     font = pygame.font.Font(None, 50)
-    text_coord = 30
+    text_coord = 100
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('light blue'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 100
+        intro_rect.x = 150
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     while True:
@@ -246,7 +248,37 @@ def finish_screen(player):
                 terminate()
             elif event.type == pygame.KEYDOWN:
                 if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
-                    return  # начинаем игру
+                    return
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def rules_screen():
+    intro_text = ["Jump - UP",
+                  "Fly upper - UP",
+                  "Fly down - DOWN",
+                  "Restart - BACKSPACE",
+                  "Start - SPACE",
+                  "Rules - ENTER",
+                  "Finish - ESCAPE"]
+    screen.fill(pygame.Color('dark blue'))
+    font = pygame.font.Font(None, 50)
+    text_coord = 100
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('light blue'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 150
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                if pygame.key.get_pressed()[pygame.K_SPACE]:
+                    return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -263,7 +295,8 @@ if __name__ == '__main__':
     pygame.display.set_caption('Гарри Поттер')
     player, others = generate()
     while True:
-        start_screen()
+        if start_screen():
+            rules_screen()
         player.new_game()
         for el in others:
             el.new_game()
@@ -278,7 +311,7 @@ if __name__ == '__main__':
                 if event.type == pygame.QUIT:
                     terminate()
                 if event.type == pygame.KEYDOWN:
-                    if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+                    if pygame.key.get_pressed()[pygame.K_ESCAPE]:
                         player.live = 0
                 player_group.update(event)
             all_sprites.update()
