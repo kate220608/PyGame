@@ -265,14 +265,14 @@ def finish_screen(player):
                   f"Your score is {player.score}",
                   f"Best score: {find_best_score()}"]
     screen.fill(pygame.Color('dark blue'))
-    logos = [pygame.transform.scale(load_image('logo_gr.png', -1), (100, 100)),
-             pygame.transform.scale(load_image('logo_r.png'), (100, 100)),
-             pygame.transform.scale(load_image('logo_sl.png', -1), (100, 100)),
-             pygame.transform.scale(load_image('logo_h.jpeg', -1), (100, 100))]
+    logos = [pygame.transform.scale(load_image('logo_gr.png'), (100, 100)),
+             pygame.transform.scale(load_image('logo_r.png'), (90, 90)),
+             pygame.transform.scale(load_image('logo_sl.png'), (100, 100)),
+             pygame.transform.scale(load_image('logo_h.png'), (90, 90))]
     screen.blit(logos[0], (10, 10))
-    screen.blit(logos[1], (590, 10))
+    screen.blit(logos[1], (590, 15))
     screen.blit(logos[2], (10, 390))
-    screen.blit(logos[3], (590, 390))
+    screen.blit(logos[3], (590, 400))
     font = pygame.font.Font(None, 50)
     text_coord = 150
     for line in intro_text:
