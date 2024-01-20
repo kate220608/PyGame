@@ -265,14 +265,22 @@ def finish_screen(player):
                   f"Your score is {player.score}",
                   f"Best score: {find_best_score()}"]
     screen.fill(pygame.Color('dark blue'))
+    logos = [pygame.transform.scale(load_image('logo_gr.png', -1), (100, 100)),
+             pygame.transform.scale(load_image('logo_r.png'), (100, 100)),
+             pygame.transform.scale(load_image('logo_sl.png', -1), (100, 100)),
+             pygame.transform.scale(load_image('logo_h.jpeg', -1), (100, 100))]
+    screen.blit(logos[0], (10, 10))
+    screen.blit(logos[1], (590, 10))
+    screen.blit(logos[2], (10, 390))
+    screen.blit(logos[3], (590, 390))
     font = pygame.font.Font(None, 50)
-    text_coord = 100
+    text_coord = 150
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('light blue'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 150
+        intro_rect.x = 200
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     while True:
@@ -296,14 +304,17 @@ def rules_screen():
                   "Rules - ENTER",
                   "Finish - ESCAPE"]
     screen.fill(pygame.Color('dark blue'))
+    logo = pygame.transform.scale(load_image('logo.png'), (200, 200))
+    screen.blit(logo, (0, 0))
+    screen.blit(logo, (560, 350))
     font = pygame.font.Font(None, 50)
-    text_coord = 100
+    text_coord = 70
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('light blue'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 150
+        intro_rect.x = 190
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     while True:
