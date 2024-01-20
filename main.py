@@ -8,8 +8,8 @@ pygame.init()
 size = WIDTH, HEIGHT = 700, 500
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+change_level = True
 FPS = 50
-
 
 
 def load_image(name, colorkey=None):
@@ -34,9 +34,8 @@ fly_player_image = pygame.transform.scale(load_image('harry_fly.png'), (150, 120
 coin_image = pygame.transform.scale(load_image('snitch.png'), (100, 30))
 super_coin_image = pygame.transform.scale(load_image('broom.png', -1), (100, 50))
 snake_obstacle_image = pygame.transform.scale(load_image('snake.png'), (50, 50))
-dementor_obstacle_image = pygame.transform.scale(load_image('dementor.png'), (80, 80))
+dementor_obstacle_image = pygame.transform.scale(load_image('dementor_ani.png'), (320, 160))
 live_image = pygame.transform.scale(load_image('owl.png'), (26, 30))
-
 
 
 class Player(pygame.sprite.Sprite):
@@ -93,13 +92,13 @@ class Player(pygame.sprite.Sprite):
 
 
 class Coin(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, is_super=False):
+    def __init__(self, is_super=False):
         super().__init__(coin_group, all_sprites)
         if is_super:
             self.image = super_coin_image
         else:
             self.image = coin_image
-        self.rect = self.image.get_rect().move(pos_x, pos_y)
+        self.rect = self.image.get_rect()
         self.vx = -100
         self.is_super = is_super
 
@@ -116,15 +115,27 @@ class Coin(pygame.sprite.Sprite):
 
 
 class Obstacle(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, is_dementor=False):
+    def __init__(self, is_dementor=False):
         super().__init__(obbstacle_group, all_sprites)
         if is_dementor:
-            self.image = dementor_obstacle_image
+            self.frames = []
+            self.cut_sheet(dementor_obstacle_image, 4, 2)
+            self.cur_frame = 0
+            self.image = self.frames[self.cur_frame]
         else:
             self.image = snake_obstacle_image
         self.is_dementor = is_dementor
-        self.rect = self.image.get_rect().move(pos_x, pos_y)
+        self.rect = self.image.get_rect()
         self.vx = -150
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
 
     def update(self):
         self.rect.x += self.vx / FPS
@@ -133,7 +144,9 @@ class Obstacle(pygame.sprite.Sprite):
 
     def change_coords(self):
         if self.is_dementor:
-            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(0, 250)
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(0, 180)
         else:
             self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(390, 400)
 
@@ -156,17 +169,37 @@ obbstacle_group = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
 
 
+
 def generate():
     Border(0, HEIGHT, WIDTH, HEIGHT)
     Border(0, 0, WIDTH, 0)
     others = []
     for i in range(2):
-        others.append(Coin(random.randint(750, 4000), random.randint(0, 400)))
-    others.append(Coin(random.randint(750, 4000), random.randint(0, 400), True))
-    others.append(Obstacle(random.randint(750, 4000), random.randint(380, 400)))
-    others.append(Obstacle(random.randint(750, 4000), random.randint(0, 250), True))
+        others.append(Coin())
+    others.append(Coin(True))
+    others.append(Obstacle())
+    others.append(Obstacle(True))
     player = Player()
     return player, others
+
+
+def level_up(player):
+    global change_level
+    Obstacle()
+    Obstacle(True)
+    intro_text = ["Level up"]
+    font = pygame.font.Font(None, 50)
+    text_coord = 100
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('light blue'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 150
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    clock.tick(FPS)
+    change_level = False
 
 
 def show_score(player):
@@ -258,6 +291,7 @@ def rules_screen():
                   "Fly upper - UP",
                   "Fly down - DOWN",
                   "Restart - BACKSPACE",
+                  "Back - BACKSPACE",
                   "Start - SPACE",
                   "Rules - ENTER",
                   "Finish - ESCAPE"]
