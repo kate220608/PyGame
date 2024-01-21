@@ -61,10 +61,13 @@ class Player(pygame.sprite.Sprite):
                 self.time_in_flight = 1500
         if args:
             if self.image == player_image:
-                if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_UP:
+                if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_UP and not args[0].mod:
                     self.rect = self.rect.move(0, -60)
+                if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_UP and args[0].mod:
+                    self.rect = self.rect.move(0, -120)
                 if args[0].type == pygame.KEYUP and args[0].key == pygame.K_UP:
-                    self.rect = self.rect.move(0, 60)
+                    self.rect.x, self.rect.y = self.begin_pos
+
             else:
                 if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_UP and self.flying_vy >= 0:
                     self.flying_vy = -self.flying_vy
@@ -108,7 +111,7 @@ class Coin(pygame.sprite.Sprite):
             self.change_coords()
 
     def change_coords(self):
-        self.rect.x, self.rect.y = random.randint(750, 4000), random.randint(0, 400)
+        self.rect.x, self.rect.y = random.randint(750, 5000), random.randint(0, 400)
 
     def new_game(self):
         self.change_coords()
@@ -146,9 +149,9 @@ class Obstacle(pygame.sprite.Sprite):
         if self.is_dementor:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
-            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(0, 180)
+            self.rect.x, self.rect.y = random.randint(750, 5000), random.randint(0, 180)
         else:
-            self.rect.x, self.rect.y = random.randint(750, 3000), random.randint(390, 400)
+            self.rect.x, self.rect.y = random.randint(750, 5000), random.randint(390, 400)
 
     def new_game(self):
         self.change_coords()
@@ -162,12 +165,27 @@ class Border(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
 
 
+class Level(pygame.sprite.Sprite):
+    def __init__(self, n):
+        super().__init__(all_sprites)
+        self.n = n
+        self.text = f"Level {self.n}"
+        font = pygame.font.Font(None, 80)
+        string_rendered = font.render(self.text, 1, pygame.Color('light blue'))
+        self.image = string_rendered
+        self.rect = string_rendered.get_rect()
+        self.rect.y = 200
+        self.rect.x = 230
+
+    def add_level(self):
+        self.n += 1
+
+
 all_sprites = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
 obbstacle_group = pygame.sprite.Group()
 horizontal_borders = pygame.sprite.Group()
-
 
 
 def generate():
@@ -180,25 +198,23 @@ def generate():
     others.append(Obstacle())
     others.append(Obstacle(True))
     player = Player()
-    return player, others
+    level = Level(1)
+    return player, level, others
 
 
-def level_up(player):
+def level_up(player, level):
     global change_level
-    Obstacle()
-    Obstacle(True)
-    intro_text = ["Level up"]
-    font = pygame.font.Font(None, 50)
-    text_coord = 100
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('light blue'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 150
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-    clock.tick(FPS)
+    if player.score == 5:
+        Obstacle().change_coords()
+        Coin().change_coords()
+    if player.score == 10:
+        Obstacle(True).change_coords()
+    if player.score == 20:
+        Coin(True).change_coords()
+        Obstacle().change_coords()
+    if player.score == 30:
+        Coin().change_coords()
+        Obstacle(True).change_coords()
     change_level = False
 
 
@@ -244,7 +260,6 @@ def start_screen():
         intro_rect.x = 100
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
-
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -296,6 +311,7 @@ def finish_screen(player):
 
 def rules_screen():
     intro_text = ["Jump - UP",
+                  "SuperJump - CTRL + UP",
                   "Fly upper - UP",
                   "Fly down - DOWN",
                   "Restart - BACKSPACE",
@@ -308,7 +324,7 @@ def rules_screen():
     screen.blit(logo, (0, 0))
     screen.blit(logo, (560, 350))
     font = pygame.font.Font(None, 50)
-    text_coord = 70
+    text_coord = 50
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('light blue'))
         intro_rect = string_rendered.get_rect()
@@ -340,7 +356,7 @@ def drawing_fon():
 
 if __name__ == '__main__':
     pygame.display.set_caption('Гарри Поттер')
-    player, others = generate()
+    player, level, others = generate()
     while True:
         if start_screen():
             if rules_screen():
@@ -355,6 +371,11 @@ if __name__ == '__main__':
             show_score(player)
             show_live(player)
             all_sprites.draw(screen)
+            if (player.score % 10 == 0 or player.score == 5) and change_level:
+                level_up(player, level)
+                level.add_level()
+            if player.score == 6 or (player.score - 2) % 10 == 0:
+                change_level = True
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
