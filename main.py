@@ -9,6 +9,7 @@ size = WIDTH, HEIGHT = 700, 500
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 change_level = True
+n_level = 1
 FPS = 50
 
 
@@ -165,21 +166,6 @@ class Border(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
 
 
-class Level(pygame.sprite.Sprite):
-    def __init__(self, n):
-        super().__init__(all_sprites)
-        self.n = n
-        self.text = f"Level {self.n}"
-        font = pygame.font.Font(None, 80)
-        string_rendered = font.render(self.text, 1, pygame.Color('light blue'))
-        self.image = string_rendered
-        self.rect = string_rendered.get_rect()
-        self.rect.y = 200
-        self.rect.x = 230
-
-    def add_level(self):
-        self.n += 1
-
 
 all_sprites = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
@@ -198,12 +184,11 @@ def generate():
     others.append(Obstacle())
     others.append(Obstacle(True))
     player = Player()
-    level = Level(1)
-    return player, level, others
+    return player, others
 
 
-def level_up(player, level):
-    global change_level
+def level_up(player):
+    global change_level, n_level
     if player.score == 5:
         Obstacle().change_coords()
         Coin().change_coords()
@@ -216,6 +201,20 @@ def level_up(player, level):
         Coin().change_coords()
         Obstacle(True).change_coords()
     change_level = False
+    n_level += 1
+
+
+def show_level():
+    global n_level, change_level
+    if not change_level:
+        text = f"Level {n_level}"
+    else:
+        text = ""
+    font = pygame.font.Font(None, 80)
+    string_rendered = font.render(text, 1, pygame.Color('light blue'))
+    rect = string_rendered.get_rect()
+    rect.x, rect.y = 250, 200
+    screen.blit(string_rendered, rect)
 
 
 def show_score(player):
@@ -356,26 +355,32 @@ def drawing_fon():
 
 if __name__ == '__main__':
     pygame.display.set_caption('Гарри Поттер')
-    player, level, others = generate()
+    player, others = generate()
+
     while True:
         if start_screen():
             if rules_screen():
                 continue
+
         player.new_game()
         for el in others:
             el.new_game()
+
         pygame.mixer.music.load("data/game_music.mp3")
         pygame.mixer.music.play(-1)
+
         while player.live:
             drawing_fon()
             show_score(player)
             show_live(player)
+            show_level()
             all_sprites.draw(screen)
-            if (player.score % 10 == 0 or player.score == 5) and change_level:
-                level_up(player, level)
-                level.add_level()
+
+            if (player.score % 10 == 0 or player.score == 5) and change_level and not player.score == 0:
+                level_up(player)
             if player.score == 6 or (player.score - 2) % 10 == 0:
                 change_level = True
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
@@ -384,8 +389,10 @@ if __name__ == '__main__':
                         player.live = 0
                 player_group.update(event)
             all_sprites.update()
+
             clock.tick(FPS)
             pygame.display.flip()
+
         add_score_to_bd(player.score)
         finish_screen(player)
 
