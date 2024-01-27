@@ -54,26 +54,25 @@ class Player(pygame.sprite.Sprite):
         if self.image == fly_player_image:
             self.rect = self.rect.move(0, self.flying_vy / FPS)
             self.time_in_flight -= 1
-            if pygame.sprite.spritecollideany(self, horizontal_borders):
-                self.flying_vy = -self.flying_vy
+
             if self.time_in_flight <= 0:
                 self.image = player_image
                 self.rect.x, self.rect.y = self.begin_pos
                 self.time_in_flight = 1500
+
         if args:
             if self.image == player_image:
                 if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_UP and not args[0].mod:
                     self.rect = self.rect.move(0, -60)
                 if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_UP and args[0].mod:
-                    self.rect = self.rect.move(0, -120)
+                    self.rect = self.rect.move(0, -100)
                 if args[0].type == pygame.KEYUP and args[0].key == pygame.K_UP:
                     self.rect.x, self.rect.y = self.begin_pos
-
             else:
                 if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_UP and self.flying_vy >= 0:
                     self.flying_vy = -self.flying_vy
                 if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_DOWN and self.flying_vy <= 0:
-                        self.flying_vy = -self.flying_vy
+                    self.flying_vy = -self.flying_vy
         self.check_colide()
 
     def check_colide(self):
@@ -84,9 +83,13 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.score += 1
             pygame.sprite.spritecollideany(self, coin_group).change_coords()
+
         if pygame.sprite.spritecollideany(self, obbstacle_group):
             pygame.sprite.spritecollideany(self, obbstacle_group).change_coords()
             self.live -= 1
+
+        if pygame.sprite.spritecollideany(self, horizontal_borders) and self.image == fly_player_image:
+            self.flying_vy = -self.flying_vy
 
     def new_game(self):
         self.score = 0
@@ -142,6 +145,10 @@ class Obstacle(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
+        if self.is_dementor:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+
         self.rect.x += self.vx / FPS
         if self.rect.x <= -300:
             self.change_coords()
@@ -152,7 +159,7 @@ class Obstacle(pygame.sprite.Sprite):
             self.image = self.frames[self.cur_frame]
             self.rect.x, self.rect.y = random.randint(750, 5000), random.randint(0, 180)
         else:
-            self.rect.x, self.rect.y = random.randint(750, 5000), random.randint(390, 400)
+            self.rect.x, self.rect.y = random.randint(750, 5000), random.randint(360, 400)
 
     def new_game(self):
         self.change_coords()
@@ -164,7 +171,6 @@ class Border(pygame.sprite.Sprite):
         self.add(horizontal_borders)
         self.image = pygame.Surface([x2 - x1, 1])
         self.rect = pygame.Rect(x1, y1, x2 - x1, 1)
-
 
 
 all_sprites = pygame.sprite.Group()
@@ -240,14 +246,16 @@ def terminate():
 def start_screen():
     pygame.mixer.music.load("data/menu_music.mp3")
     pygame.mixer.music.play(-1)
-    intro_text = ["HARRY POTTER", ""
-                                  "PRESS SPASE TO START"]
+
+    intro_text = ["HARRY POTTER",
+                  "PRESS SPASE TO START"]
 
     fon = pygame.transform.scale(load_image('fon.png'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     main_font = pygame.font.Font(None, 50)
     font = pygame.font.Font(None, 25)
     text_coord = 30
+
     for line in intro_text:
         if line == "HARRY POTTER":
             string_rendered = main_font.render(line, 1, pygame.Color('white'))
@@ -259,6 +267,7 @@ def start_screen():
         intro_rect.x = 100
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -275,28 +284,35 @@ def start_screen():
 def finish_screen(player):
     pygame.mixer.music.load("data/menu_music.mp3")
     pygame.mixer.music.play(-1)
-    intro_text = ["You Lost!",
+
+    intro_text = ["     You Lost!",
+                  "",
                   f"Your score is {player.score}",
+                  "",
                   f"Best score: {find_best_score()}"]
     screen.fill(pygame.Color('dark blue'))
+
     logos = [pygame.transform.scale(load_image('logo_gr.png'), (100, 100)),
              pygame.transform.scale(load_image('logo_r.png'), (90, 90)),
              pygame.transform.scale(load_image('logo_sl.png'), (100, 100)),
              pygame.transform.scale(load_image('logo_h.png'), (90, 90))]
+
     screen.blit(logos[0], (10, 10))
     screen.blit(logos[1], (590, 15))
     screen.blit(logos[2], (10, 390))
     screen.blit(logos[3], (590, 400))
     font = pygame.font.Font(None, 50)
     text_coord = 150
+
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('light blue'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 200
+        intro_rect.x = 210
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -311,27 +327,30 @@ def finish_screen(player):
 def rules_screen():
     intro_text = ["Jump - UP",
                   "SuperJump - CTRL + UP",
-                  "Fly upper - UP",
+                  "Fly up - UP",
                   "Fly down - DOWN",
-                  "Restart - BACKSPACE",
                   "Back - BACKSPACE",
                   "Start - SPACE",
                   "Rules - ENTER",
-                  "Finish - ESCAPE"]
+                  "Finish - ESCAPE",
+                  "Pause - SPACE"]
+
     screen.fill(pygame.Color('dark blue'))
     logo = pygame.transform.scale(load_image('logo.png'), (200, 200))
     screen.blit(logo, (0, 0))
     screen.blit(logo, (560, 350))
     font = pygame.font.Font(None, 50)
     text_coord = 50
+
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('light blue'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
-        intro_rect.x = 190
+        intro_rect.x = 180
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -341,6 +360,43 @@ def rules_screen():
                     return
                 if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
                     return True
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def pause_screen(player):
+    intro_text = ["PAUSE"]
+    screen.fill(pygame.Color('dark blue'))
+
+    logos = [pygame.transform.scale(load_image('logo_gr.png'), (100, 100)),
+             pygame.transform.scale(load_image('logo_r.png'), (90, 90)),
+             pygame.transform.scale(load_image('logo_sl.png'), (100, 100)),
+             pygame.transform.scale(load_image('logo_h.png'), (90, 90))]
+
+    screen.blit(logos[0], (10, 10))
+    screen.blit(logos[1], (590, 15))
+    screen.blit(logos[2], (10, 390))
+    screen.blit(logos[3], (590, 400))
+
+    font = pygame.font.Font(None, 100)
+    text_coord = 200
+
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('light blue'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 230
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                if pygame.key.get_pressed()[pygame.K_BACKSPACE]:
+                    return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -387,6 +443,10 @@ if __name__ == '__main__':
                 if event.type == pygame.KEYDOWN:
                     if pygame.key.get_pressed()[pygame.K_ESCAPE]:
                         player.live = 0
+                    if pygame.key.get_pressed()[pygame.K_SPACE]:
+                        pause_screen(player)
+                    if pygame.key.get_pressed()[pygame.K_RETURN]:
+                        rules_screen()
                 player_group.update(event)
             all_sprites.update()
 
@@ -395,4 +455,3 @@ if __name__ == '__main__':
 
         add_score_to_bd(player.score)
         finish_screen(player)
-

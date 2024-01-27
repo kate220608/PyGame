@@ -15,5 +15,3 @@ def find_best_score():
     res = cur.execute("SELECT score FROM results").fetchall()
     con.close()
     return max(res[1])
-
-
