@@ -73,9 +73,9 @@ class Player(pygame.sprite.Sprite):
                     self.flying_vy = -self.flying_vy
                 if args[0].type == pygame.KEYDOWN and args[0].key == pygame.K_DOWN and self.flying_vy <= 0:
                     self.flying_vy = -self.flying_vy
-        self.check_colide()
+        self.check_collide()
 
-    def check_colide(self):
+    def check_collide(self):
         if pygame.sprite.spritecollideany(self, coin_group):
             if pygame.sprite.spritecollideany(self, coin_group).is_super:
                 self.image = fly_player_image
@@ -401,12 +401,37 @@ def pause_screen(player):
         clock.tick(FPS)
 
 
-def drawing_fon():
+def choose_fon_screen():
+    screen.fill(pygame.Color(66, 65, 148))
+    dark_theme = pygame.transform.scale(load_image('dark_theme.png'), (300, 250))
+    light_theme = pygame.transform.scale(load_image('light_theme.png'), (300, 250))
+    screen.blit(dark_theme, (10, 10))
+    screen.blit(light_theme, (380, 230))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                if 10 <= x <= 360 and 10 <= y <= 260:
+                    return True
+                if 380 <= x <= 680 and 230 <= y <= 480:
+                    return False
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def drawing_dark_fon():
     screen.fill(pygame.Color('dark blue'))
     pygame.draw.rect(screen, pygame.Color('dark green'), (0, 400, 700, 100))
     for i in range(1000):
         pygame.draw.circle(screen, pygame.Color('white'),
                            (random.randint(0, WIDTH), random.randint(0, HEIGHT - 100)), 1)
+
+
+def drawing_light_fon():
+    screen.fill(pygame.Color(26, 161, 201))
+    pygame.draw.rect(screen, pygame.Color(73, 201, 26), (0, 400, 700, 100))
 
 
 if __name__ == '__main__':
@@ -417,6 +442,7 @@ if __name__ == '__main__':
         if start_screen():
             if rules_screen():
                 continue
+        dark_theme = choose_fon_screen()
 
         player.new_game()
         for el in others:
@@ -426,7 +452,11 @@ if __name__ == '__main__':
         pygame.mixer.music.play(-1)
 
         while player.live:
-            drawing_fon()
+            if dark_theme:
+                drawing_dark_fon()
+            else:
+                drawing_light_fon()
+
             show_score(player)
             show_live(player)
             show_level()
