@@ -217,7 +217,11 @@ def show_level():
     else:
         text = ""
     font = pygame.font.Font(None, 80)
-    string_rendered = font.render(text, 1, pygame.Color('light blue'))
+    if dark_theme:
+        color = pygame.Color('light blue')
+    else:
+        color = pygame.Color("white")
+    string_rendered = font.render(text, 1, color)
     rect = string_rendered.get_rect()
     rect.x, rect.y = 250, 200
     screen.blit(string_rendered, rect)
@@ -225,7 +229,11 @@ def show_level():
 
 def show_score(player):
     font = pygame.font.Font(None, 40)
-    string_rendered = font.render(f"Score: {player.score}", 1, pygame.Color('light blue'))
+    if dark_theme:
+        color = pygame.Color("light blue")
+    else:
+        color = pygame.Color("white")
+    string_rendered = font.render(f"Score: {player.score}", 1, color)
     rect = string_rendered.get_rect()
     rect.x, rect.y = 290, 10
     screen.blit(string_rendered, rect)
@@ -366,7 +374,11 @@ def rules_screen():
 
 def pause_screen(player):
     intro_text = ["PAUSE"]
-    screen.fill(pygame.Color('dark blue'))
+
+    if dark_theme:
+        screen.fill(pygame.Color('dark blue'))
+    else:
+        screen.fill(pygame.Color(26, 161, 201))
 
     logos = [pygame.transform.scale(load_image('logo_gr.png'), (100, 100)),
              pygame.transform.scale(load_image('logo_r.png'), (90, 90)),
@@ -381,8 +393,13 @@ def pause_screen(player):
     font = pygame.font.Font(None, 100)
     text_coord = 200
 
+    if dark_theme:
+        color = pygame.Color('light blue')
+    else:
+        color = pygame.Color('white')
+
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('light blue'))
+        string_rendered = font.render(line, 1, color)
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -403,10 +420,11 @@ def pause_screen(player):
 
 def choose_fon_screen():
     screen.fill(pygame.Color(66, 65, 148))
-    dark_theme = pygame.transform.scale(load_image('dark_theme.png'), (300, 250))
-    light_theme = pygame.transform.scale(load_image('light_theme.png'), (300, 250))
-    screen.blit(dark_theme, (10, 10))
-    screen.blit(light_theme, (380, 230))
+    dark_theme_image = pygame.transform.scale(load_image('dark_theme.png'), (300, 250))
+    light_theme_image = pygame.transform.scale(load_image('light_theme.png'), (300, 250))
+    screen.blit(dark_theme_image, (10, 10))
+    screen.blit(light_theme_image, (380, 230))
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -464,7 +482,7 @@ if __name__ == '__main__':
 
             if (player.score % 10 == 0 or player.score == 5) and change_level and not player.score == 0:
                 level_up(player)
-            if player.score == 6 or (player.score - 2) % 10 == 0:
+            if player.score == 6 or (player.score - 1) % 10 == 0:
                 change_level = True
 
             for event in pygame.event.get():
